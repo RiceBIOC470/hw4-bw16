@@ -64,18 +64,18 @@ open(V);
 reader1=bfGetReader('nfkb_movie1.tif');
 reader2=bfGetReader('nfkb_movie2.tif');
 
-nt=reader1.getSizeT; 
-nz=reader1.getSizeZ; 
-nt2=reader2.getSizeT; 
-nz2=reader2.getSizeZ;
+i=reader1.getSizeT; 
+z=reader1.getSizeZ; 
+t2=reader2.getSizeT; 
+z2=reader2.getSizeZ;
 
-for i=1:nt
+for i=1:i
     iplane=reader1.getIndex(0,0,i-1)+1;
     img_max2=bfGetPlane(reader1,iplane);
     iplane2_2=reader1.getIndex(0,1,i-1)+1;
     img_max1_2=bfGetPlane(reader1,iplane2_2);
 
-    for k=2:nz
+    for k=2:z
         iplane1=reader1.getIndex(k-1,0,i-1)+1;
         imgnow1=bfGetPlane(reader1,iplane1);
         img_max2=max(img_max2,imgnow1);
@@ -91,13 +91,13 @@ for i=1:nt
 end
 
 
-for j=1:nt2
+for j=1:t2
     iplane2=reader2.getIndex(0,0,j-1)+1;
     img_max2=bfGetPlane(reader2,iplane2);
     iplane2_2=reader2.getIndex(0,1,j-1)+1;
     img_max2_2=bfGetPlane(reader2,iplane2_2);
 
-    for k=2:nz2
+    for k=2:z2
         iplane2=reader2.getIndex(k-1,0,j-1)+1;
         imgnow2_1=bfGetPlane(reader2,iplane2);
         img_max2=max(img_max2,imgnow2_1);
@@ -149,7 +149,7 @@ imshow(img2,[]);
 % thresholds an image to make a binary mask. Apply this to your output
 % image from 2. 
 
-img3=mask(img2);
+img3=m(img2);
 figure(5);
 imshow(img3,[]);
 
@@ -182,11 +182,11 @@ img_max1=bfGetPlane(reader1,iplane);
 z=reader1.getSizeZ;
 for k = 2:z
         iplane=reader1.getIndex(k-1,1,0)+1;
-        tempimg1=bfGetPlane(reader1,iplane);
-        img_max1=max(img_max1,tempimg1);
+        t1=bfGetPlane(reader1,iplane);
+        img_max1=max(img_max1,t1);
 end
 bsimg=BackgroundSub(img_max1,4,2,100);
-m=mask(bsimg);
+m=m(bsimg);
 cmask=cleanup(m); 
 [number,meanarea,meanintensity]=count(bsimg,cmask);
 meanintensity
@@ -195,7 +195,40 @@ meanintensity
 
 % 1. Write a loop that calls your functions from Problem 3 to produce binary masks
 % for every time point in the two movies. Save a movie of the binary masks.
+V=VideoWriter('mask.avi');
+open(V);
+T1=reader1.getSizeT;
+T2=reader2.getSizeT ;
+for i=1:T1
+    iplane=reader1.getIndex(0,0,i-1)+1;
+    img_max1=bfGetPlane(reader1,iplane); 
+    for k=2:reader1.getSizeZ
+        iplane=reader1.getIndex(k-1,0,i-1)+1;
+        t1=bfGetPlane(reader1,iplane);
+        img_max1=max(img_max1,t1);
+    end
+    imgfil=BackgroundSub(img_max1,4,2,100);
+    m=m(imgfil);
+    j=cleanup(m); 
+    t=im2double(j);
+    writeVideo(V,t);
+end
 
+for i=1:T2
+    iplane=reader2.getIndex(0,0,i-1)+1;
+    img_max1=bfGetPlane(reader2,iplane);
+    for k=2:reader2.getSizeZ
+        iplane=reader2.getIndex(k-1,0,i-1)+1;
+        t1=bfGetPlane(reader2,iplane);
+        img_max1=max(img_max1,t1);
+    end         
+    imgfil=BackgroundSub(img_max1,4,2,100);
+    m=m(imgfil);
+    j=cleanup(m); 
+    t=im2double(j);
+    writeVideo(V,t);
+end
+ close(V);
 
 
 % 2. Use a loop to call your function from problem 3, part 5 on each one of
@@ -203,4 +236,63 @@ meanintensity
 % get the number of cells and the mean intensities in both
 % channels as a function of time. Make plots of these with time on the
 % x-axis and either number of cells or intensity on the y-axis. 
+reader1=bfGetReader('nfkb_movie1.tif');
+reader2=bfGetReader('nfkb_movie2.tif');
+t1=reader1.getSizeT;
+t2=reader2.getSizeT
+i = 1;
+for j=1:t1
+    iplane=reader1.getIndex(0,0,j-1)+1;
+    img=bfGetPlane(reader1,iplane);
+    iplane=reader1.getIndex(0,1,j-1)+1;
+    img2=bfGetPlane(reader1,iplane);
+    temp_d=im2double(img);
+    imgfil=BackgroundSub(temp_d,4,2,100);
+    m=mask(imgfil);
+    c=cleanup(m);  
+    [number1,meanarea1,meanintensity1] = cellcounts(imgfil,c); 
+    temp_d=im2double(img2);
+    imgfil=BackgroundSub(temp_d,4,2,100);
+    m=mask(imgfil);
+    c=cleanup(m);  
+    [number2,meanarea2,meanintensity2] = count(imgfil,c);   
+    cells1(1,i) = number1;
+    cells1(2,i) = number2;   
+    meanint1(1,i) = meanintensity1;
+    meanint1(2,i) = meanintensity2;
+    i = i+1;
+end
 
+for j = 1:t2
+    iplane=reader2.getIndex(0,0,j-1)+1;
+    img=bfGetPlane(reader1,iplane);
+    iplane=reader2.getIndex(0,1,j-1)+1;
+    img2=bfGetPlane(reader2,iplane);   
+    temp_d=im2double(img);
+    imgfil=BackgroundSub(temp_d,4,2,100);
+    m=mask(imgfil);
+    c=cleanup(m);  
+    [number1,meanarea1,meanintensity1] = count(imgfil,c);  
+    temp_d=im2double(img2);
+    imgfil=BackgroundSub(temp_d,4,2,100);
+    m=mask(imgfil);
+    c=cleanup(m);  
+    [number2,meanarea2,meanintensity2]=count(imgfil,c);    
+    cells1(1,i)=number1;
+    cells1(2,i)=number2;
+    meanint1(1,i)=meanintensity1;
+    meanint1(2,i)=meanintensity2;
+    i = i+1;
+end
+figure;
+plot(1:i-1,meanint1(1,:));
+hold on;
+plot(1:i-1,meanint1(2,:));
+xlabel('Time');
+ylabel('Mean Intensity');
+figure(7);
+plot(1:i-1,cells1(1,:));
+hold on;
+plot(1:i-1,cells1(2,:));
+xlabel('Time');
+ylabel('Number of Cells');
